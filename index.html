@@ -3,22 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3ead3">
 <title>Old Tech, Close to Home</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ============ Look & feel ============ */
+  /* Default palette is Library Card; participants can switch palettes from the footer. */
   :root {
-    --paper: #f3ede2;
-    --card: #fbf8f2;
-    --ink: #29241f;
-    --muted: #6d655c;
-    --line: #d9cfbf;
-    --accent: #b8492a;
-    --accent-ink: #fff;
-    --ok: #3f6b48;
+    --paper: #f3ead3;
+    --card: #ebe0c4;
+    --ink: #2b2520;
+    --muted: #695c4d;
+    --line: #c9b78f;
+    --accent: #7a2e1f;
+    --error: #a3141c;
+    --on-accent: #f3ead3;
     --radius: 14px;
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -26,94 +29,95 @@
     background: var(--paper);
     color: var(--ink);
     font: 16px/1.55 "Inter", system-ui, sans-serif;
-    min-height: 100vh;
+    min-height: 100vh; min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  .wrap {
+    max-width: 560px; margin: 0 auto;
+    min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+    padding: 36px max(16px, env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
   .screen { display: none; }
   .screen.active { display: block; animation: fade .25s ease; }
+  /* Welcome and prompt screens fill the viewport so their primary button sits at the bottom, above the footer. */
+  #welcome.active, #question.active { display: flex; flex-direction: column; flex: 1; }
   @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .screen.active { animation: none; } .btn { transition: none; } }
 
   .eyebrow {
     font: 500 12px/1 "IBM Plex Mono", monospace;
     letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
   }
-  h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 700; line-height: 1.12; margin: 10px 0 14px; }
+  h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 700; line-height: 1.12; margin: 10px 0 14px; color: var(--accent); text-wrap: balance; }
   h1 { font-size: clamp(34px, 9vw, 46px); }
-  h2 { font-size: clamp(26px, 7vw, 32px); }
+  h2 { font-size: clamp(22px, 6vw, 26px); line-height: 1.22; font-weight: 500; text-wrap: pretty; }
   p { margin: 0 0 14px; }
   .muted { color: var(--muted); }
 
-  .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 18px; margin: 18px 0;
-  }
-  .card h3 { font: 600 15px/1.3 "Inter", sans-serif; margin: 0 0 8px; }
-  .card ul { margin: 0; padding-left: 20px; }
-  .card li { margin: 4px 0; }
-
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: 50px; padding: 0 22px; border-radius: 999px;
+    min-height: 50px; padding: 0 22px; border-radius: var(--radius);
     font: 600 16px/1 "Inter", sans-serif; cursor: pointer;
     border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
     transition: transform .08s ease, opacity .15s ease;
+    -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
   }
   .btn:active { transform: scale(.98); }
-  .btn.primary { background: var(--ink); color: var(--paper); }
-  .btn.accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  /* The photo button is filled until this prompt has a photo. */
+  .btn.primary, #photo-btn:not(.replace) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
   .btn.block { width: 100%; }
+  #welcome-title + p { margin-bottom: 24px; }
+  #start-btn { margin-top: auto; }
+  .btn.replace { border-color: var(--accent); color: var(--accent); }
   .btn[disabled] { opacity: .4; cursor: not-allowed; }
-  .btn:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn.primary[disabled] { opacity: 1; background: transparent; border-color: var(--line); color: var(--muted); }
+  .btn:focus-visible, .link:focus-visible, input[type=file]:focus-visible + .btn { outline: 3px solid var(--accent); outline-offset: 2px; }
+  textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 
-  /* progress */
-  .progress { display: flex; gap: 6px; margin: 4px 0 22px; }
-  .progress span { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
-  .progress span.done { background: var(--ok); }
-  .progress span.current { background: var(--accent); }
-
-  /* photo area */
-  .photo-zone {
-    margin: 20px 0 16px; border: 2px dashed var(--line); border-radius: var(--radius);
-    padding: 22px 16px; text-align: center; background: rgba(255,255,255,.35);
+  /* photo */
+  .photo { margin: 8px 0 18px; }
+  .photo img {
+    display: none; max-width: 100%; max-height: 360px; margin: 0 auto 12px;
+    border: 1px solid var(--line); border-radius: var(--radius);
   }
-  .photo-zone.has-photo { border: none; padding: 8px 0; background: none; }
-  .polaroid {
-    display: none; background: #fff; padding: 12px 12px 40px; margin: 0 auto 16px;
-    max-width: 320px; box-shadow: 0 8px 24px rgba(41,36,31,.16); transform: rotate(-1.5deg);
-  }
-  .polaroid img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: cover; }
-  .has-photo .polaroid { display: block; }
-  .photo-icon { font-size: 34px; line-height: 1; margin-bottom: 8px; }
+  .photo.has-photo img { display: block; }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-  label.field { display: block; font-weight: 600; margin: 4px 0 6px; }
+  label.field { display: block; font-weight: 600; margin: 0 0 6px; }
   textarea {
     width: 100%; min-height: 110px; resize: vertical; padding: 12px 14px;
-    border: 1px solid var(--line); border-radius: 10px; background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--card);
     font: 16px/1.5 "Inter", sans-serif; color: var(--ink);
   }
-  .hint { font-size: 14px; color: var(--muted); margin-top: -4px; }
+  textarea::placeholder { color: var(--muted); opacity: 1; }
 
-  .nav { display: flex; gap: 10px; margin-top: 22px; }
-  .nav .btn.primary { flex: 1; }
+  .status { min-height: 34px; font-size: 14px; margin: auto 0 12px; padding-top: 12px; }
+  .status.error { color: var(--error); }
 
-  .status { min-height: 22px; font-size: 14px; margin-top: 10px; }
-  .status.error { color: var(--accent); }
-  .status.ok { color: var(--ok); }
-  .saved-badge {
-    display: none; font: 500 12px/1 "IBM Plex Mono", monospace; color: var(--ok);
-    border: 1px solid var(--ok); border-radius: 999px; padding: 6px 10px; margin-left: 8px;
-    vertical-align: middle;
+  /* secondary text link, used for Back */
+  .link {
+    display: block; margin: 4px auto 0; min-height: 44px; padding: 0 16px;
+    background: none; border: none; cursor: pointer;
+    font: 500 15px/1 "Inter", sans-serif; color: var(--muted); text-decoration: underline; text-underline-offset: 3px;
   }
-  .saved .saved-badge { display: inline-block; }
+  .link[disabled] { opacity: .4; cursor: not-allowed; }
+  footer { margin-top: auto; padding-top: 30px; font-size: 13px; color: var(--muted); text-align: center; text-wrap: balance; }
 
-  .stamp {
-    display: inline-block; border: 2px solid var(--ok); color: var(--ok);
-    font: 500 13px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
-    padding: 8px 12px; transform: rotate(-3deg); margin-bottom: 14px;
+  /* ============ Palettes ============ */
+  :root[data-palette="library"] { --paper: #f3ead3; --card: #ebe0c4; --ink: #2b2520; --muted: #695c4d; --line: #c9b78f; --accent: #7a2e1f; --error: #a3141c; --on-accent: #f3ead3; color-scheme: light; }
+  :root[data-palette="cyanotype"] { --paper: #f2f1ec; --card: #e9e8e1; --ink: #1b2230; --muted: #5a6170; --line: #c8cad0; --accent: #1f3f73; --error: #a4262c; --on-accent: #f2f1ec; color-scheme: light; }
+  :root[data-palette="riso"] { --paper: #f7f0e1; --card: #efe5cf; --ink: #22305e; --muted: #5b5870; --line: #d4c6a8; --accent: #c2295a; --error: #a83a12; --on-accent: #fffaf0; color-scheme: light; }
+  :root[data-palette="darkroom"] { --paper: #1a1311; --card: #241b18; --ink: #eee2d4; --muted: #b09f92; --line: #4a3a33; --accent: #f0614f; --error: #ffb3a6; --on-accent: #1a1311; color-scheme: dark; }
+  :root[data-palette="phosphor"] { --paper: #0e1611; --card: #152019; --ink: #d5e6cf; --muted: #8ea889; --line: #2e4233; --accent: #7edc8a; --error: #ff8a80; --on-accent: #0e1611; color-scheme: dark; }
+  :root[data-palette="walkman"] { --paper: #1c1d22; --card: #26272d; --ink: #e8e6e1; --muted: #a19f99; --line: #45474e; --accent: #f28c38; --error: #ff8f8f; --on-accent: #1c1d22; color-scheme: dark; }
+  footer p { margin: 0; }
+  .palette { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; }
+  /* 16px so iOS doesn't zoom when the menu opens */
+  #palette-toggle {
+    min-height: 44px; padding: 0 10px; border-radius: 10px;
+    font: 16px "Inter", sans-serif; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line);
   }
-  footer { margin-top: 30px; font-size: 13px; color: var(--muted); text-align: center; }
 </style>
 </head>
 <body>
@@ -121,111 +125,93 @@
 
   <!-- ============ WELCOME ============ -->
   <section class="screen active" id="welcome" aria-labelledby="welcome-title">
-    <div class="eyebrow">A photo study · about 15 minutes</div>
+    <div class="eyebrow">A photo study</div>
     <h1 id="welcome-title">Old Tech, Close to Home</h1>
-    <p>Thanks for helping with my class project! I'm curious about the older, low-tech, and "not-for-me" technology in people's everyday lives.</p>
     <p>Over the next few screens you'll get a handful of short prompts. For each one, <strong>take or choose a photo</strong> and add a sentence or two about it. There are no wrong answers. What counts as "old tech" is up to you.</p>
 
-    <div class="card">
-      <h3>Before you start</h3>
-      <ul>
-        <li>Please keep <strong>faces, addresses, and mail</strong> out of your photos.</li>
-        <li>You can stop and come back later. This page remembers your progress on this device.</li>
-        <li>No photo for a prompt? You can just write about it instead.</li>
-        <li>Your photos go only to me and will be used for a class assignment. I'll ask you about them in a short follow-up chat.</li>
-      </ul>
-    </div>
-
-    <button class="btn accent block" id="start-btn">Start</button>
+    <button class="btn primary block" id="start-btn">Start</button>
     <p class="muted" id="resume-note" style="display:none;margin-top:12px;text-align:center;font-size:14px"></p>
+    <button class="link" id="restart-btn" style="display:none">Start over</button>
   </section>
 
   <!-- ============ QUESTION (reused for every prompt) ============ -->
-  <section class="screen" id="question" aria-live="polite">
-    <div class="progress" id="progress" aria-hidden="true"></div>
-    <div class="eyebrow" id="q-count">Prompt 1 of 6</div>
-    <h2 id="q-title" tabindex="-1">Title</h2>
-    <p id="q-text"></p>
-    <p class="hint" id="q-hint"></p>
+  <section class="screen" id="question">
+    <div class="eyebrow" id="q-count">1 of 6</div>
+    <h2 id="q-title" tabindex="-1"></h2>
 
-    <div class="photo-zone" id="photo-zone">
-      <div class="polaroid"><img id="preview" alt="Your selected photo"></div>
-      <div id="photo-empty">
-        <div class="photo-icon" aria-hidden="true">📷</div>
-        <p class="muted" style="margin-bottom:14px">Take a new photo or pick one from your camera roll.</p>
-      </div>
-      <label class="btn primary" for="photo-input" id="photo-btn">Take or choose a photo</label>
+    <div class="photo" id="photo-zone">
+      <img id="preview" alt="Your selected photo">
       <input type="file" id="photo-input" accept="image/*">
+      <label class="btn block" for="photo-input" id="photo-btn">Take or upload a photo</label>
     </div>
 
     <label class="field" for="caption">Tell me about it</label>
     <textarea id="caption" placeholder="What is it? Why did you pick it?"></textarea>
 
-    <div class="nav">
-      <button class="btn" id="back-btn">Back</button>
-      <button class="btn primary" id="next-btn" disabled>Save &amp; continue</button>
-    </div>
     <div class="status" id="status" role="status"></div>
+    <button class="btn primary block" id="next-btn" disabled>Save &amp; continue</button>
+    <button class="link" id="back-btn">Previous</button>
   </section>
 
   <!-- ============ THANK YOU ============ -->
   <section class="screen" id="done" aria-labelledby="done-title">
-    <div class="stamp">Received</div>
+    <div class="eyebrow">Received</div>
     <h1 id="done-title" tabindex="-1">Thank you!</h1>
     <p>Your photos and notes are saved. I'll reach out soon to set up a short follow-up chat where you can tell me more about what you shared.</p>
     <p class="muted">Want to change something? You can go back to any prompt and send it again.</p>
-    <button class="btn" id="review-btn">Go back to the prompts</button>
+    <button class="link" id="review-btn" style="margin-left:0;padding-left:0">Go back to the prompts</button>
   </section>
 
-  <footer>Class research project · photos are not shared publicly</footer>
+  <footer>
+    <p>Class research project · photos are not shared publicly</p>
+    <label class="palette">Colours
+      <select id="palette-toggle">
+        <option value="library">Library Card</option>
+        <option value="cyanotype">Cyanotype</option>
+        <option value="riso">Riso Zine</option>
+        <option value="darkroom">Darkroom</option>
+        <option value="phosphor">Phosphor</option>
+        <option value="walkman">Walkman</option>
+      </select>
+    </label>
+  </footer>
 </main>
 
+<script src="config.js"></script>
 <script>
 /* =====================================================================
    SETTINGS — edit these
    ===================================================================== */
 const CONFIG = {
-  // Paste your Apps Script web-app URL here (ends in /exec).
-  // Leave empty to run in demo mode: nothing is uploaded.
-  scriptUrl: "",
+  // The Apps Script web-app URL lives in config.js, which git ignores.
+  // Without config.js the page runs in demo mode: nothing is uploaded.
+  scriptUrl: window.PROBE_SCRIPT_URL || "",
 
   // The prompts, in order. Each one gets its own page.
   prompts: [
     {
       id: "still-in-service",
-      title: "Still in service",
-      text: "Photograph the oldest piece of technology you used this week.",
-      hint: "Anything counts: a calculator, a car stereo, an old laptop, a kitchen timer."
+      text: "Photograph the oldest piece of technology you used this week."
     },
     {
       id: "cant-let-go",
-      title: "Can't let go",
-      text: "Photograph something you keep but never use.",
-      hint: "In your note: why is it still here?"
+      text: "Photograph something you keep but never use."
     },
     {
       id: "the-other-way",
-      title: "The other way",
-      text: "Photograph something you use instead of a newer option.",
-      hint: "A paper planner instead of an app, an alarm clock instead of your phone, cash instead of a card…"
+      text: "Photograph something you use instead of a newer option."
     },
     {
       id: "not-for-me",
-      title: "Not for me",
-      text: "Photograph a technology you refuse, quit, or limit, or the empty space where it would be.",
-      hint: "A screenshot works too, like an app limit, a Focus mode, or a deleted-apps folder."
+      text: "Photograph a technology you refuse, quit, or limit, or the empty space where it would be."
     },
     {
       id: "unplugged",
-      title: "Unplugged",
-      text: "Photograph the most “analog” spot in your home.",
-      hint: "Where does tech not belong, or not reach?"
+      text: "Photograph the most “analog” spot in your home."
     },
     {
       id: "future-relic",
-      title: "Future relic",
-      text: "Photograph something you own now that you think will look “retro” in 10 years.",
-      hint: ""
+      text: "Photograph something you own now that you think will look “retro” in 10 years."
     }
   ],
 
@@ -239,25 +225,32 @@ const CONFIG = {
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "oldtech-probe-v1";
 
+// Saved in the browser when possible; kept in memory if storage is blocked.
+const mem = {};
+function read(key) {
+  try { const v = JSON.parse(localStorage.getItem(key)); if (v) mem[key] = v; } catch {}
+  return mem[key] || {};
+}
+function write(key, patch) {
+  mem[key] = { ...read(key), ...patch };
+  try { localStorage.setItem(key, JSON.stringify(mem[key])); } catch {}
+}
+
 // Participant ID from the link (?p=P01). Falls back to a random code.
 function getParticipant() {
-  const fromUrl = new URLSearchParams(location.search).get("p");
-  if (fromUrl) return fromUrl.slice(0, 40);
-  const saved = load().anon;
+  const fromUrl = (new URLSearchParams(location.search).get("p") || "").replace(/[^\w-]/g, "").slice(0, 40);
+  if (fromUrl) return fromUrl;
+  const saved = read(STORE_KEY).anon;
   if (saved) return saved;
   const anon = "anon-" + Math.random().toString(36).slice(2, 7);
-  save({ anon });
+  write(STORE_KEY, { anon });
   return anon;
 }
 
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
-}
-function save(patch) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...load(), ...patch })); } catch {}
-}
-
 const participant = getParticipant();
+// Progress is kept per participant code, so two links opened on one device don't mix.
+const load = () => read(STORE_KEY + ":" + participant);
+const save = (patch) => write(STORE_KEY + ":" + participant, patch);
 let index = 0;
 let photoData = null; // compressed JPEG data URL for the current prompt
 
@@ -266,51 +259,50 @@ function show(screenId) {
   window.scrollTo(0, 0);
 }
 
-function renderProgress() {
-  const saved = load().saved || {};
-  $("progress").innerHTML = CONFIG.prompts.map((p, i) =>
-    `<span class="${i === index ? "current" : saved[p.id] ? "done" : ""}"></span>`
-  ).join("");
-}
-
 function renderQuestion() {
   const p = CONFIG.prompts[index];
   const state = load();
   const saved = (state.saved || {})[p.id];
 
-  $("q-count").textContent = `Prompt ${index + 1} of ${CONFIG.prompts.length}`;
-  $("q-title").innerHTML = "";
-  $("q-title").append(p.title);
-  const badge = document.createElement("span");
-  badge.className = "saved-badge";
-  badge.textContent = "Saved ✓";
-  $("q-title").append(badge);
-  $("q-title").parentElement.classList.toggle("saved", !!saved);
-  $("q-text").textContent = p.text;
-  $("q-hint").textContent = p.hint || "";
-  $("q-hint").style.display = p.hint ? "" : "none";
+  $("q-count").textContent = `${index + 1} of ${CONFIG.prompts.length}` + (saved ? " · Saved ✓" : "");
+  $("q-title").textContent = p.text;
 
   photoData = null;
   $("photo-input").value = "";
   $("preview").removeAttribute("src");
   $("photo-zone").classList.remove("has-photo");
-  $("photo-empty").style.display = "";
-  $("photo-btn").textContent = "Take or choose a photo";
+  setPhotoButton(!!(saved && saved.photo));
   $("caption").value = (state.drafts || {})[p.id] || "";
-  $("status").textContent = saved ? "Already saved. Sending again adds a new entry." : "";
+  $("status").textContent = "";
   $("status").className = "status";
-  $("back-btn").textContent = index === 0 ? "Intro" : "Back";
-  $("next-btn").textContent = index === CONFIG.prompts.length - 1 ? "Save & finish" : "Save & continue";
 
-  renderProgress();
   updateNext();
   show("question");
   $("q-title").focus({ preventScroll: true });
 }
 
+// The photo button changes label and color once this prompt has a photo.
+function setPhotoButton(hasPhoto) {
+  $("photo-btn").textContent = hasPhoto ? "Replace photo" : "Take or upload a photo";
+  $("photo-btn").classList.toggle("replace", hasPhoto);
+}
+
+// True when there is something new to upload for the current prompt.
+function needsSend() {
+  const saved = (load().saved || {})[CONFIG.prompts[index].id];
+  const caption = $("caption").value.trim();
+  // A photo is required the first time; after that the note can be updated on its own.
+  if (!saved) return !!photoData;
+  return !!photoData || (caption !== "" && caption !== (saved.caption || ""));
+}
+
+// An already-saved prompt with no changes just moves on, without uploading again.
 function updateNext() {
-  const hasCaption = $("caption").value.trim().length > 0;
-  $("next-btn").disabled = !(photoData || hasCaption);
+  const saved = (load().saved || {})[CONFIG.prompts[index].id];
+  const last = index === CONFIG.prompts.length - 1;
+  const send = needsSend();
+  $("next-btn").textContent = send || !saved ? (last ? "Save & finish" : "Save & continue") : (last ? "Finish" : "Next");
+  $("next-btn").disabled = !(send || saved);
 }
 
 // Shrink the photo in the browser. This also strips location data from it.
@@ -323,7 +315,10 @@ function compress(file) {
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.naturalWidth * scale);
       canvas.height = Math.round(img.naturalHeight * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff"; // transparent screenshots would otherwise turn black
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       resolve(canvas.toDataURL("image/jpeg", 0.82));
     };
@@ -341,8 +336,7 @@ $("photo-input").addEventListener("change", async (e) => {
     photoData = await compress(file);
     $("preview").src = photoData;
     $("photo-zone").classList.add("has-photo");
-    $("photo-empty").style.display = "none";
-    $("photo-btn").textContent = "Choose a different photo";
+    setPhotoButton(true);
     $("status").textContent = "";
   } catch (err) {
     photoData = null;
@@ -360,14 +354,14 @@ $("caption").addEventListener("input", () => {
   updateNext();
 });
 
-async function submit() {
+async function submit(caption) {
   const p = CONFIG.prompts[index];
   const payload = {
     participant,
     promptId: p.id,
     promptNumber: index + 1,
     promptText: p.text,
-    caption: $("caption").value.trim(),
+    caption,
     image: photoData ? photoData.split(",")[1] : "",
     mimeType: "image/jpeg",
     clientTime: new Date().toISOString()
@@ -381,61 +375,105 @@ async function submit() {
   }
 
   // text/plain avoids a CORS preflight, which Apps Script doesn't support.
-  const res = await fetch(CONFIG.scriptUrl, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  });
-  const out = await res.json();
+  // Give up after 90 seconds so a stalled connection doesn't leave the page stuck on "Saving…".
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90000);
+  let out;
+  try {
+    const res = await fetch(CONFIG.scriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+    out = await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
   if (!out.ok) throw new Error(out.error || "Upload failed");
 }
 
+function advance() {
+  if (index < CONFIG.prompts.length - 1) { index++; renderQuestion(); }
+  else { show("done"); $("done-title").focus({ preventScroll: true }); }
+}
+
 $("next-btn").addEventListener("click", async () => {
+  if (!needsSend()) { advance(); return; }
   const btn = $("next-btn");
-  const label = btn.textContent;
+  const caption = $("caption").value.trim();
+  const hadPhoto = !!photoData;
   btn.disabled = true; $("back-btn").disabled = true;
   btn.textContent = "Saving…";
   $("status").textContent = "";
+  $("status").className = "status";
   try {
-    await submit();
-    const state = load();
-    const saved = state.saved || {};
-    saved[CONFIG.prompts[index].id] = new Date().toISOString();
-    save({ saved, lastIndex: index + 1 });
-    if (index < CONFIG.prompts.length - 1) { index++; renderQuestion(); }
-    else { show("done"); $("done-title").focus({ preventScroll: true }); }
+    await submit(caption);
   } catch (err) {
     $("status").textContent = "Couldn't save. Check your connection and try again.";
     $("status").className = "status error";
-    btn.disabled = false;
+    updateNext();
+    return;
   } finally {
-    btn.textContent = label;
     $("back-btn").disabled = false;
-    if (!$("question").classList.contains("active")) btn.textContent = label;
   }
+  const saved = load().saved || {};
+  const before = saved[CONFIG.prompts[index].id];
+  saved[CONFIG.prompts[index].id] = { at: new Date().toISOString(), caption, photo: hadPhoto || !!(before && before.photo) };
+  save({ saved });
+  advance();
 });
 
 $("back-btn").addEventListener("click", () => {
-  if (index === 0) { show("welcome"); return; }
+  if (index === 0) { renderWelcome(); show("welcome"); return; }
   index--; renderQuestion();
 });
 
+// Start at the first prompt that hasn't been saved yet.
 $("start-btn").addEventListener("click", () => {
-  const last = load().lastIndex || 0;
-  index = Math.min(last, CONFIG.prompts.length - 1);
+  const saved = load().saved || {};
+  const next = CONFIG.prompts.findIndex(p => !saved[p.id]);
+  index = next === -1 ? 0 : next;
+  renderQuestion();
+});
+
+// Clears progress on this device only. Anything already sent stays in the Sheet.
+$("restart-btn").addEventListener("click", () => {
+  if (!confirm("Start over from the first prompt? Your earlier answers have already been sent and will be kept.")) return;
+  save({ saved: {}, drafts: {} });
+  index = 0;
   renderQuestion();
 });
 
 $("review-btn").addEventListener("click", () => { index = 0; renderQuestion(); });
 
 // Resume note on the welcome screen
-(function () {
-  const done = Object.keys(load().saved || {}).length;
-  if (done > 0) {
-    $("start-btn").textContent = done >= CONFIG.prompts.length ? "Review your answers" : "Continue where you left off";
-    $("resume-note").textContent = `${done} of ${CONFIG.prompts.length} prompts saved.`;
-    $("resume-note").style.display = "";
-  }
+function renderWelcome() {
+  const saved = load().saved || {};
+  const done = CONFIG.prompts.filter(p => saved[p.id]).length;
+  $("start-btn").textContent = done === 0 ? "Start" : done >= CONFIG.prompts.length ? "Review your answers" : "Continue where you left off";
+  $("resume-note").textContent = `${done} of ${CONFIG.prompts.length} prompts saved.`;
+  $("resume-note").style.display = done > 0 ? "" : "none";
+  $("restart-btn").style.display = done > 0 ? "" : "none";
+}
+renderWelcome();
+</script>
+
+<script>
+// Colour palette picker in the footer. Choice is kept in this browser; ?palette=<name> sets it from a link.
+(() => {
+  const sel = document.getElementById("palette-toggle");
+  const apply = (v) => {
+    document.documentElement.dataset.palette = v;
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+    document.querySelector('meta[name="theme-color"]').content = bg;
+    try { localStorage.setItem("oldtech-palette", v); } catch {}
+  };
+  let start = new URLSearchParams(location.search).get("palette");
+  if (start === null) { try { start = localStorage.getItem("oldtech-palette"); } catch {} }
+  if (![...sel.options].some(o => o.value === start)) start = "library";
+  sel.value = start; apply(start);
+  sel.addEventListener("change", () => apply(sel.value));
 })();
 </script>
 </body>

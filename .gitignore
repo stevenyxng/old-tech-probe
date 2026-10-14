@@ -1,0 +1,12 @@
+# Private settings: the real Apps Script upload URL
+config.js
+
+# Common secret files, in case any get added later
+.env
+.env.*
+*.pem
+.clasp.json
+.clasprc.json
+
+# macOS clutter
+.DS_Store

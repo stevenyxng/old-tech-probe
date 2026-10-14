@@ -1,0 +1,52 @@
+# Publishes the probe to GitHub Pages on every push to main.
+# config.js is git-ignored, so this workflow writes it from the repository
+# secret PROBE_SCRIPT_URL (Settings → Secrets and variables → Actions).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write config.js from the secret
+        env:
+          PROBE_SCRIPT_URL: ${{ secrets.PROBE_SCRIPT_URL }}
+        run: |
+          # Stop rather than quietly publishing a demo-mode site.
+          if [[ ! "$PROBE_SCRIPT_URL" =~ ^https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec$ ]]; then
+            echo "::error::Secret PROBE_SCRIPT_URL is missing or isn't an Apps Script /exec URL."
+            exit 1
+          fi
+          mkdir _site
+          cp index.html _site/
+          printf 'window.PROBE_SCRIPT_URL = "%s";\n' "$PROBE_SCRIPT_URL" > _site/config.js
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
