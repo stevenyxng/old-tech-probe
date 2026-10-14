@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f3ead3">
+<meta name="theme-color" content="#1a1311">
 <title>Old Tech, Close to Home</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600..700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400..700&display=swap" rel="stylesheet">
 <style>
   /* ============ Look & feel ============ */
-  /* Default palette is Library Card; participants can switch palettes from the footer. */
+  /* Default palette is Darkroom; participants can switch palettes from the footer. */
   :root {
-    --paper: #f3ead3;
-    --card: #ebe0c4;
-    --ink: #2b2520;
-    --muted: #695c4d;
-    --line: #c9b78f;
-    --accent: #7a2e1f;
-    --error: #a3141c;
-    --on-accent: #f3ead3;
+    --paper: #1a1311;
+    --card: #241b18;
+    --ink: #eee2d4;
+    --muted: #b09f92;
+    --line: #4a3a33;
+    --accent: #f0614f;
+    --error: #ffb3a6;
+    --on-accent: #1a1311;
     --radius: 14px;
-    color-scheme: light;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -48,9 +48,9 @@
     font: 500 12px/1 "IBM Plex Mono", monospace;
     letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
   }
-  h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 700; line-height: 1.12; margin: 10px 0 14px; color: var(--accent); text-wrap: balance; }
+  h1, h2 { font-family: "Instrument Sans", system-ui, sans-serif; font-weight: 700; line-height: 1.12; margin: 10px 0 14px; color: var(--accent); text-wrap: balance; }
   h1 { font-size: clamp(34px, 9vw, 46px); }
-  h2 { font-size: clamp(22px, 6vw, 26px); line-height: 1.22; font-weight: 500; text-wrap: pretty; }
+  h2 { font-size: clamp(22px, 6vw, 26px); line-height: 1.22; font-weight: 600; text-wrap: pretty; }
   p { margin: 0 0 14px; }
   .muted { color: var(--muted); }
 
@@ -191,27 +191,27 @@ const CONFIG = {
   prompts: [
     {
       id: "still-in-service",
-      text: "Photograph the oldest piece of technology you used this week."
+      text: "Something old you still use regularly"
     },
     {
       id: "cant-let-go",
-      text: "Photograph something you keep but never use."
+      text: "A device that holds something irreplaceable: old photos, messages, saved games"
     },
     {
       id: "the-other-way",
-      text: "Photograph something you use instead of a newer option."
+      text: "Something you use instead of a newer option"
     },
     {
       id: "not-for-me",
-      text: "Photograph a technology you refuse, quit, or limit, or the empty space where it would be."
+      text: "A technology you refuse, or one you’ve quit"
     },
     {
       id: "unplugged",
-      text: "Photograph the most “analog” spot in your home."
+      text: "The most “analog” spot in your home"
     },
     {
       id: "future-relic",
-      text: "Photograph something you own now that you think will look “retro” in 10 years."
+      text: "Something you own now that you think will look “retro” in 10 years"
     }
   ],
 
@@ -471,7 +471,7 @@ renderWelcome();
   };
   let start = new URLSearchParams(location.search).get("palette");
   if (start === null) { try { start = localStorage.getItem("oldtech-palette"); } catch {} }
-  if (![...sel.options].some(o => o.value === start)) start = "library";
+  if (![...sel.options].some(o => o.value === start)) start = "darkroom";
   sel.value = start; apply(start);
   sel.addEventListener("change", () => apply(sel.value));
 })();
